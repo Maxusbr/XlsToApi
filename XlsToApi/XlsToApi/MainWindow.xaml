@@ -1,0 +1,26 @@
+﻿<Window x:Class="XlsToApi.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XlsToApi"
+		xmlns:vm="clr-namespace:XlsToApi.ViewModel"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525"><!--DataContext="{Binding Main, Source={StaticResource Locator}}"-->
+	<Grid >
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition/>
+				<ColumnDefinition/>
+			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="35"/>
+				<RowDefinition/>
+			</Grid.RowDefinitions>
+			<Button x:Name="ButtonLoad" Content="загрузить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Command="{Binding ClickLoad}"/>
+			<ListView Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" ItemsSource="{Binding Logs}" VerticalAlignment="Stretch"/>
+			<Button x:Name="ButtonSend" Content="отправить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Grid.Column="1" Command="{Binding ClickSend}"/>
+		</Grid>
+
+	</Grid>
+</Window>
