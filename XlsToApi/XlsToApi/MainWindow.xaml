@@ -17,9 +17,9 @@
 				<RowDefinition Height="35"/>
 				<RowDefinition/>
 			</Grid.RowDefinitions>
-			<Button x:Name="ButtonLoad" Content="загрузить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Command="{Binding ClickLoad}"/>
+			<Button x:Name="ButtonLoad" Content="загрузить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Command="{Binding ClickLoad}" IsEnabled="{Binding IsNotWorked}"/>
 			<ListView Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" ItemsSource="{Binding Logs}" VerticalAlignment="Stretch"/>
-			<Button x:Name="ButtonSend" Content="отправить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Grid.Column="1" Command="{Binding ClickSend}"/>
+			<Button x:Name="ButtonSend" Content="отправить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Grid.Column="1" Command="{Binding ClickSend}" IsEnabled="{Binding IsNotWorked}"/>
 		</Grid>
 
 	</Grid>

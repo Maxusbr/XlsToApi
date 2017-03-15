@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -28,6 +29,17 @@ namespace XlsToApi.ViewModel
 
 		readonly Excel.Application _excelApp;
 		private readonly Dispatcher _dispatcher;
+		private bool _isNotWorked = true;
+
+		public bool IsNotWorked
+		{
+			get { return _isNotWorked; }
+			set
+			{
+				_isNotWorked = value;
+				RaisePropertyChanged();
+			}
+		}
 
 		public RelayCommand ClickLoad { get; private set; }
 		public RelayCommand ClickSend { get; private set; }
@@ -41,21 +53,35 @@ namespace XlsToApi.ViewModel
 		{
 			var sendMsg = JsonConvert.SerializeObject(Schedules);
 			Logs.Add(sendMsg);
-			string result = string.Empty;
-			using (var client = new WebClient())
+			Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
 			{
-				client.Headers[HttpRequestHeader.ContentType] = "application/json";
-				var url = "http://fmsabwdapi.azurewebsites.net/api";
-				try
+				FileName = "Schedules",
+				DefaultExt = ".json",
+				Filter = "Json file (.json)|*.json"
+			};
+			if (dlg.ShowDialog() == true)
+			{
+				string filename = dlg.FileName;
+				using (var writer = new StreamWriter(filename))
 				{
-					result = client.UploadString(url, "POST", sendMsg);
-				}
-				catch (Exception ex)
-				{
-					Logs.Add(ex.Message);
+					writer.Write(sendMsg);
 				}
 			}
-			Logs.Add(result);
+			//string result = string.Empty;
+			//using (var client = new WebClient())
+			//{
+			//	client.Headers[HttpRequestHeader.ContentType] = "application/json";
+			//	var url = "http://fmsabwdapi.azurewebsites.net/api";
+			//	try
+			//	{
+			//		result = client.UploadString(url, "POST", sendMsg);
+			//	}
+			//	catch (Exception ex)
+			//	{
+			//		Logs.Add(ex.Message);
+			//	}
+			//}
+			//Logs.Add(result);
 		}
 
 		private void Load()
@@ -77,11 +103,13 @@ namespace XlsToApi.ViewModel
 			try
 			{
 				Schedules.Clear();
+				IsNotWorked = false;
 				Task.Run(() => ReadBook(_excelApp.Workbooks.Open(filename)));
 			}
 			catch (Exception ex)
 			{
 				Logs.Add(ex.Message);
+				IsNotWorked = true;
 			}
 		}
 
@@ -89,7 +117,7 @@ namespace XlsToApi.ViewModel
 		{
 			foreach (Excel.Worksheet worksheet in workbook.Worksheets)
 			{
-				if (worksheet.Name == "Выписки" || worksheet.Name == "3114") continue;
+				if (worksheet.Name == "Выписки") continue;
 				var schedul = new ScheduleModel { group_name = worksheet.Name };
 
 				var cell = worksheet.Range["A1"];//range.Cells[1, 1];
@@ -100,13 +128,13 @@ namespace XlsToApi.ViewModel
 				if (dates.Count > 1 && DateTime.TryParse(dates[1].Value, out dt))
 					schedul.ends_at = dt;
 				DispatherThreadRun(() => Logs.Add($"Группа: {schedul.group_name} расписание c {schedul.starts_at:d} по {schedul.ends_at:d} "));
-				ReadScheet(worksheet, schedul);
-				Schedules.Add(schedul);
+				Schedules.Add(ReadScheet(worksheet, schedul));
+				//break;
 			}
-			//DispatherThreadRun(() => Logs.Add(JsonConvert.SerializeObject(Schedules)));
+			DispatherThreadRun(() => IsNotWorked = true);
 		}
 
-		private void ReadScheet(Excel.Worksheet worksheet, ScheduleModel schedul)
+		private ScheduleModel ReadScheet(Excel.Worksheet worksheet, ScheduleModel schedul)
 		{
 			Excel.Range range = worksheet.UsedRange;
 			var items = new List<ScheduleItem>();
@@ -126,9 +154,10 @@ namespace XlsToApi.ViewModel
 							{
 								schedulweekDay.items = items.ToArray();
 								scheduls.Add(schedulweekDay);
+								//break;
 							}
 							weekDay = worksheet.Cells[4, column].Value.Trim(' ');
-							if(weekDay == "Преподаватель") return;
+							if(weekDay == "Преподаватель") break;
 							schedulweekDay = new ScheduleDay { week_day = GetWeekDay(weekDay) };
 							items = new List<ScheduleItem>();
 							DispatherThreadRun(() => Logs.Add($"{weekDay}:"));
@@ -184,7 +213,7 @@ namespace XlsToApi.ViewModel
 			{
 				DispatherThreadRun(() => Logs.Add(ex.Message));
 			}
-			//var cell = worksheet.Range[$"E{row}"];
+			return schedul;
 		}
 
 		private RoomModel[] GetRoomModel(Excel.Worksheet worksheet, int row, int column)
