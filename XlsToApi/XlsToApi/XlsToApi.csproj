@@ -84,6 +84,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Model\ListViewExtensions.cs" />
     <Compile Include="Model\RoomModel.cs" />
     <Compile Include="Model\ScheduleModel.cs" />
     <Compile Include="Model\ScheduleDay.cs" />

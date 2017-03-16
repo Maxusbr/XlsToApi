@@ -51,22 +51,29 @@ namespace XlsToApi.ViewModel
 		}
 		private void Send()
 		{
-			var sendMsg = JsonConvert.SerializeObject(Schedules);
-			Logs.Add(sendMsg);
-			Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
+			IsNotWorked = false;
+			
+			Task.Run(() =>
 			{
-				FileName = "Schedules",
-				DefaultExt = ".json",
-				Filter = "Json file (.json)|*.json"
-			};
-			if (dlg.ShowDialog() == true)
-			{
-				string filename = dlg.FileName;
-				using (var writer = new StreamWriter(filename))
+				var sendMsg = JsonConvert.SerializeObject(CalcRealSchedules());
+				Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
 				{
-					writer.Write(sendMsg);
+					FileName = "Schedules",
+					DefaultExt = ".json",
+					Filter = "Json file (.json)|*.json"
+				};
+				if (dlg.ShowDialog() == true)
+				{
+					string filename = dlg.FileName;
+					using (var writer = new StreamWriter(filename))
+					{
+						writer.Write(sendMsg);
+					}
 				}
-			}
+				DispatherThreadRun(() => IsNotWorked = true);
+			});
+			//Logs.Add(sendMsg);
+			
 			//string result = string.Empty;
 			//using (var client = new WebClient())
 			//{
@@ -82,6 +89,38 @@ namespace XlsToApi.ViewModel
 			//	}
 			//}
 			//Logs.Add(result);
+		}
+
+		private List<ScheduleModel> CalcRealSchedules()
+		{
+			var result = new List<ScheduleModel>();
+			foreach (var schedul in Schedules)
+			{
+				var schedule = new ScheduleModel { group_name = schedul.group_name, starts_at = schedul.starts_at, ends_at = schedul.ends_at, faculty_name = schedul.faculty_name };
+				var schedules = new List<ScheduleDay>();
+				for (var dt = schedul.starts_at; dt <= schedul.ends_at; dt = dt.AddDays(1))
+				{
+					var scheduleDay = schedul.schedule.FirstOrDefault(o => o.week_day == (int)dt.DayOfWeek);
+					if (scheduleDay == null) continue;
+					var day = new ScheduleDay { date = dt, week_day = scheduleDay.week_day };
+					day.items = scheduleDay.items.Select(o => new ScheduleItem
+					{
+						date = day.date,
+						week_day = o.week_day,
+						week_is_odd = o.week_is_odd,
+						lesson_start = day.date + GetTimeStart(o.lesson),
+						lesson_end = day.date + GetTimeEnd(o.lesson),
+						lesson_type = o.lesson_type,
+						subject = o.subject,
+						classrooms = o.classrooms,
+						teachers = o.teachers
+					}).ToArray();
+					schedules.Add(day);
+				}
+				schedule.schedule = schedules.ToArray();
+				result.Add(schedule);
+			}
+			return result;
 		}
 
 		private void Load()
@@ -157,7 +196,7 @@ namespace XlsToApi.ViewModel
 								//break;
 							}
 							weekDay = worksheet.Cells[4, column].Value.Trim(' ');
-							if(weekDay == "Преподаватель") break;
+							if (weekDay == "Преподаватель") break;
 							schedulweekDay = new ScheduleDay { week_day = GetWeekDay(weekDay) };
 							items = new List<ScheduleItem>();
 							DispatherThreadRun(() => Logs.Add($"{weekDay}:"));
@@ -225,7 +264,7 @@ namespace XlsToApi.ViewModel
 				var arr = value.Split(',');
 				foreach (var el in arr)
 				{
-					if(string.IsNullOrEmpty(el)) continue;
+					if (string.IsNullOrEmpty(el)) continue;
 					var cabMatch = Regex.Match(el, "(^\\d+[а-я]*)|([а-яА-Я-]*-\\d*)");
 					if (!cabMatch.Success) continue;
 					var cab = new RoomModel { room = cabMatch.Value };
@@ -250,6 +289,33 @@ namespace XlsToApi.ViewModel
 				case "пятница": return 5;
 				case "суббота": return 6;
 				default: return 0;
+			}
+		}
+
+		private TimeSpan GetTimeStart(int lesson)
+		{
+			switch (lesson)
+			{
+				case 1: return new TimeSpan(9, 0, 0);
+				case 2: return new TimeSpan(10, 45, 0);
+				case 3: return new TimeSpan(12, 50, 0);
+				case 4: return new TimeSpan(14, 35, 0);
+				case 5: return new TimeSpan(16, 30, 0);
+				case 6: return new TimeSpan(18, 15, 0);
+				default: return new TimeSpan();
+			}
+		}
+		private TimeSpan GetTimeEnd(int lesson)
+		{
+			switch (lesson)
+			{
+				case 1: return new TimeSpan(10, 30, 0);
+				case 2: return new TimeSpan(12, 20, 0);
+				case 3: return new TimeSpan(14, 25, 0);
+				case 4: return new TimeSpan(16, 20, 0);
+				case 5: return new TimeSpan(18, 05, 0);
+				case 6: return new TimeSpan(19, 50, 0);
+				default: return new TimeSpan();
 			}
 		}
 	}

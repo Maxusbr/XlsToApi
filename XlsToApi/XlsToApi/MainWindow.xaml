@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XlsToApi"
 		xmlns:vm="clr-namespace:XlsToApi.ViewModel"
-        mc:Ignorable="d"
+		xmlns:model="clr-namespace:XlsToApi.Model"
+		mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525"><!--DataContext="{Binding Main, Source={StaticResource Locator}}"-->
 	<Grid >
 		<Grid>
@@ -18,7 +19,8 @@
 				<RowDefinition/>
 			</Grid.RowDefinitions>
 			<Button x:Name="ButtonLoad" Content="загрузить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Command="{Binding ClickLoad}" IsEnabled="{Binding IsNotWorked}"/>
-			<ListView Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" ItemsSource="{Binding Logs}" VerticalAlignment="Stretch"/>
+			<ListView Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" ItemsSource="{Binding Logs}" VerticalAlignment="Stretch"
+					  model:ListViewExtensions.AutoScrollToEnd="True"/>
 			<Button x:Name="ButtonSend" Content="отправить" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Grid.Column="1" Command="{Binding ClickSend}" IsEnabled="{Binding IsNotWorked}"/>
 		</Grid>
 
