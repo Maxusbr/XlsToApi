@@ -174,7 +174,7 @@ namespace XlsToApi.ViewModel
 				cell = worksheet.Range["A2"];
 				string[] facultyName = cell.Value.ToString().Split(new[] { schedul.group_name }, StringSplitOptions.None);
 				if (facultyName.Length > 0)
-					schedul.faculty_name = facultyName[0];
+					schedul.faculty_name = facultyName[0].Trim();
 				DispatherThreadRun(() => Logs.Add($"Группа: {schedul.group_name} расписание c {schedul.starts_at:d} по {schedul.ends_at:d} "));
 				Schedules.Add(ReadScheet(worksheet, schedul));
 				//break;
