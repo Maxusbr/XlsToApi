@@ -143,11 +143,16 @@ namespace XlsToApi.ViewModel
 			{
 				Schedules.Clear();
 				IsNotWorked = false;
-				Task.Run(() => ReadBook(_excelApp.Workbooks.Open(filename)));
+				Task.Run(() =>
+				{
+					ReadBook(_excelApp.Workbooks.Open(filename));
+					_excelApp.Workbooks.Close();
+				});
 			}
 			catch (Exception ex)
 			{
 				Logs.Add(ex.Message);
+				_excelApp.Workbooks.Close();
 				IsNotWorked = true;
 			}
 		}
@@ -166,6 +171,10 @@ namespace XlsToApi.ViewModel
 					schedul.starts_at = dt;
 				if (dates.Count > 1 && DateTime.TryParse(dates[1].Value, out dt))
 					schedul.ends_at = dt;
+				cell = worksheet.Range["A2"];
+				string[] facultyName = cell.Value.ToString().Split(new[] { schedul.group_name }, StringSplitOptions.None);
+				if (facultyName.Length > 0)
+					schedul.faculty_name = facultyName[0];
 				DispatherThreadRun(() => Logs.Add($"Группа: {schedul.group_name} расписание c {schedul.starts_at:d} по {schedul.ends_at:d} "));
 				Schedules.Add(ReadScheet(worksheet, schedul));
 				//break;
