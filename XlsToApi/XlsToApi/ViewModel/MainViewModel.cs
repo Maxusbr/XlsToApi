@@ -52,10 +52,11 @@ namespace XlsToApi.ViewModel
 		private void Send()
 		{
 			IsNotWorked = false;
-			
+
 			Task.Run(() =>
 			{
-				var sendMsg = JsonConvert.SerializeObject(CalcRealSchedules());
+				//var sendMsg = JsonConvert.SerializeObject(CalcRealSchedules());
+				var sendMsg = JsonConvert.SerializeObject(Schedules);
 				Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
 				{
 					FileName = "Schedules",
@@ -73,7 +74,7 @@ namespace XlsToApi.ViewModel
 				DispatherThreadRun(() => IsNotWorked = true);
 			});
 			//Logs.Add(sendMsg);
-			
+
 			//string result = string.Empty;
 			//using (var client = new WebClient())
 			//{
@@ -108,8 +109,8 @@ namespace XlsToApi.ViewModel
 						date = day.date,
 						week_day = o.week_day,
 						week_is_odd = o.week_is_odd,
-						lesson_start = day.date + GetTimeStart(o.lesson),
-						lesson_end = day.date + GetTimeEnd(o.lesson),
+						lesson_start = GetTimeStart(o.lesson),
+						lesson_end = GetTimeEnd(o.lesson),
 						lesson_type = o.lesson_type,
 						subject = o.subject,
 						classrooms = o.classrooms,
@@ -211,13 +212,20 @@ namespace XlsToApi.ViewModel
 							DispatherThreadRun(() => Logs.Add($"{weekDay}:"));
 						}
 						var subject = string.Empty;
+						var group = string.Empty;
 						var teachers = new List<string>();
 						for (var row = 1; row < range.Cells.Rows.Count; row++)
 						{
 							if (row < 6) continue;
 							var b = worksheet.Cells[row, 2].Value?.ToString() ?? "";
+							var p = worksheet.Cells[row, 1].Value?.ToString() ?? "";
+
 							try
 							{
+								if (!string.IsNullOrEmpty(p))
+								{
+									group = p;
+								}
 								if (!string.IsNullOrEmpty(b) && Regex.Match(b, "^[а-яА-Я- \\.]+$").Success)
 								{
 									teachers = new List<string>();
@@ -227,10 +235,11 @@ namespace XlsToApi.ViewModel
 									subject = b;
 								}
 								if (string.IsNullOrEmpty(worksheet.Cells[row, column].Value?.ToString() ?? "")) continue;
-								var cabs = GetRoomModel(worksheet, row, column);
+								var cabs = GetRoomModel(worksheet, row, column, group);
 								if (!cabs.Any()) continue;
 								int lesson;
 								if (!int.TryParse(worksheet.Cells[5, column].Value?.ToString() ?? "", out lesson)) continue;
+								var lessonType = worksheet.Cells[row + 1, column].Value?.ToString() ?? "";
 								var item = new ScheduleItem
 								{
 									subject = subject,
@@ -238,7 +247,10 @@ namespace XlsToApi.ViewModel
 									classrooms = cabs,
 									week_is_odd = worksheet.Cells[row, 4].Value == "н",
 									week_day = GetWeekDay(weekDay),
-									teachers = teachers.ToArray()
+									teachers = teachers.ToArray(),
+									lesson_type = lessonType == "л" ? "лекция": "практика",
+									lesson_start = GetTimeStart(lesson),
+									lesson_end = GetTimeEnd(lesson)
 								};
 								DispatherThreadRun(() => Logs.Add(item.ToString()));
 								items.Add(item);
@@ -264,7 +276,7 @@ namespace XlsToApi.ViewModel
 			return schedul;
 		}
 
-		private RoomModel[] GetRoomModel(Excel.Worksheet worksheet, int row, int column)
+		private RoomModel[] GetRoomModel(Excel.Worksheet worksheet, int row, int column, string group)
 		{
 			var cabs = new List<RoomModel>();
 			try
@@ -276,7 +288,7 @@ namespace XlsToApi.ViewModel
 					if (string.IsNullOrEmpty(el)) continue;
 					var cabMatch = Regex.Match(el, "(^\\d+[а-я]*)|([а-яА-Я-]*-\\d*)");
 					if (!cabMatch.Success) continue;
-					var cab = new RoomModel { room = cabMatch.Value };
+					var cab = new RoomModel { room = cabMatch.Value, subgroup = group};
 					cabs.Add(cab);
 				}
 			}

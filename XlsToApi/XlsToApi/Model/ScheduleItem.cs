@@ -8,9 +8,9 @@ namespace XlsToApi.Model
 {
 	public class ScheduleItem
 	{
-		public DateTime date { get; set; }
-		public DateTime lesson_start { get; set; }
-		public DateTime lesson_end { get; set; }
+		public DateTime? date { get; set; }
+		public TimeSpan lesson_start { get; set; }
+		public TimeSpan lesson_end { get; set; }
 		[JsonIgnore]
 		public int lesson { get; set; }
 		public string lesson_type { get; set; }
